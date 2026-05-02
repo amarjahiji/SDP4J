@@ -27,11 +27,28 @@ public class Migration {
     private final MetadataParser metadataParser = new MetadataParser();
     private final DdlGenerator ddlGenerator = new DdlGenerator();
 
+    /**
+     * Create a Migration configured with the JDBC data source and base package to scan for entity classes.
+     *
+     * @param dataSource  JDBC DataSource used to obtain connections for executing DDL statements
+     * @param packageName base package to scan for classes annotated with `@Table`
+     */
     public Migration(DataSource dataSource, String packageName) {
         this.dataSource = dataSource;
         this.packageName = packageName;
     }
 
+    /**
+     * Applies schema migrations discovered in the configured package to the target database and writes the generated SQL to a migration file.
+     *
+     * This method scans the configured package for classes annotated with @Table, generates CREATE TABLE, foreign key, and index statements,
+     * executes those statements inside a single transaction (ensuring a schema_migrations table exists and recording the migration), and then
+     * writes the produced SQL statements to a new file under the migrations directory.
+     *
+     * @throws IllegalArgumentException if the configured package name is null or empty
+     * @throws SQLException if a database operation fails (including execution of DDL, recording the migration, or commit/rollback failures)
+     * @throws IOException if writing the migration file to disk fails
+     */
     public void migrateSchema() throws SQLException, IOException {
         if (!CommonUtil.isValidString(packageName)) {
             throw new IllegalArgumentException("Package name must be provided for migration");
@@ -68,6 +85,11 @@ public class Migration {
         writeMigrationFile("migrateSchema" + LocalDateTime.now(), createTablesStatements, createForeignKeyStatements, createIndexStatements);
     }
 
+    /**
+     * Scans the configured base package and collects classes annotated with {@code @Table}.
+     *
+     * @return a list of classes annotated with {@code @Table} found under the configured package; an empty list if none are found
+     */
     private List<Class<?>> getClassesToMigrate() {
         try (ScanResult scan = new ClassGraph()
                 .acceptPackages(packageName)
@@ -77,12 +99,29 @@ public class Migration {
         }
     }
 
+    /**
+     * Ensures the schema_migrations table exists in the database.
+     *
+     * Executes the DDL defined by {@code Sql.CREATE_MIGRATIONS_TABLE}, creating the
+     * migrations table if it does not already exist.
+     *
+     * @param connection the JDBC connection used to execute the statement
+     * @throws SQLException if creating or executing the statement fails
+     */
     private void ensureMigrationsTableExists(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute(Sql.CREATE_MIGRATIONS_TABLE);
         }
     }
 
+    /**
+     * Inserts a migration record into the `schema_migrations` table for the given script name.
+     *
+     * The record stores `script_name` as the provided value and `migrated_at` as the current timestamp.
+     *
+     * @param scriptName the name of the migration script to record in the migrations table
+     * @throws SQLException if the database insert fails
+     */
     private void recordMigration(Connection connection, String scriptName) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(Sql.INSERT_MIGRATION)) {
             ps.setString(1, scriptName);
@@ -90,6 +129,14 @@ public class Migration {
         }
     }
 
+    /**
+     * Executes the given DDL statements as a JDBC batch on the provided connection.
+     *
+     * Invalid or blank statements are ignored; if the collection is null or empty, no action is taken.
+     *
+     * @param ddls the list of DDL SQL strings to execute; blank or invalid entries will be skipped
+     * @throws SQLException if adding statements to the batch or executing the batch fails
+     */
     private void executeDdls(Connection connection, List<String> ddls) throws SQLException {
         if (!CommonUtil.isValidCollection(ddls)) {
             return;
@@ -104,6 +151,18 @@ public class Migration {
         }
     }
 
+    /**
+     * Writes the provided SQL statements to a new migration file under the local `migrations` directory.
+     *
+     * The file is created at `migrations/{scriptName}` and will contain create-table statements first,
+     * followed by foreign-key statements, then index statements; each statement is separated by a blank line.
+     *
+     * @param scriptName   name to use for the migration file (used as the filename under `migrations`)
+     * @param createTables ordered list of CREATE TABLE SQL statements to include first
+     * @param foreignKeys  ordered list of FOREIGN KEY SQL statements to include after create-tables
+     * @param indexes      ordered list of INDEX SQL statements to include last
+     * @throws IOException if directory creation or file writing fails, or if the target file already exists
+     */
     private void writeMigrationFile(String scriptName, List<String> createTables, List<String> foreignKeys, List<String> indexes) throws IOException {
         Path dir = Paths.get("migrations");
         if (!Files.exists(dir)) {
