@@ -1,7 +1,7 @@
 package com.sdp4j.core.client;
 
 import com.sdp4j.core.util.CommonUtil;
-import com.sdp4j.smigration.services.Migration;
+import com.sdp4j.simplemigration.services.Migration;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -40,5 +40,17 @@ public class Sdp4jClient {
         config.setMaxLifetime(1800000);
         config.setLeakDetectionThreshold(60000);
         return new HikariDataSource(config);
+    }
+
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public Migration getMigration() {
+        return migration;
     }
 }
