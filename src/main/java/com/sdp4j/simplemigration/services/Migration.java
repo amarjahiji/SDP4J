@@ -78,6 +78,39 @@ public class Migration {
         return new MigrationMetadata("renameColumn(" + oldColumnName + ", " + newColumnName + ", " + tableName + ")", ddls);
     }
 
+    public MigrationMetadata modifyColumn(String columnName, String tableName, String newDataType, Boolean notNull, String defaultValue) {
+        validateSqlIdentifiers(columnName, tableName);
+        List<String> ddls = new ArrayList<>();
+        StringBuilder alterColumnDdl = new StringBuilder("ALTER TABLE " + tableName + " ALTER COLUMN " + columnName);
+
+        boolean hasModifications = false;
+
+        if (CommonUtil.isValidString(newDataType)) {
+            ddls.add(alterColumnDdl + " TYPE " + newDataType + ";");
+            hasModifications = true;
+        }
+
+        if (notNull != null) {
+            if (notNull) {
+                ddls.add("ALTER TABLE " + tableName + " ALTER COLUMN " + columnName + " SET NOT NULL;");
+            } else {
+                ddls.add("ALTER TABLE " + tableName + " ALTER COLUMN " + columnName + " DROP NOT NULL;");
+            }
+            hasModifications = true;
+        }
+
+        if (CommonUtil.isValidString(defaultValue)) {
+            ddls.add("ALTER TABLE " + tableName + " ALTER COLUMN " + columnName + " SET DEFAULT " + defaultValue + ";");
+            hasModifications = true;
+        }
+
+        if (!hasModifications) {
+            throw new IllegalArgumentException("At least one modification (newDataType, notNull, or defaultValue) must be provided");
+        }
+
+        return new MigrationMetadata("modifyColumn(" + columnName + ", " + tableName + ")", ddls);
+    }
+
     public MigrationMetadata dropIndex(String columnName, String tableName) {
         validateSqlIdentifiers(columnName, tableName);
         String indexName = generateIndexName(tableName, columnName);
