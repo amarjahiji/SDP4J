@@ -1,4 +1,4 @@
-package com.sdp4j.simplemigration.metadata;
+package com.sdp4j.sm4j.metadata;
 
 import java.util.List;
 import java.util.Map;

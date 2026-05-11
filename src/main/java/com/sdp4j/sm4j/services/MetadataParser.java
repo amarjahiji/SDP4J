@@ -1,9 +1,10 @@
-package com.sdp4j.simplemigration.services;
+package com.sdp4j.sm4j.services;
 
+import com.sdp4j.core.exception.Sdp4jValidationException;
 import com.sdp4j.core.util.CommonUtil;
-import com.sdp4j.simplemigration.annotations.*;
-import com.sdp4j.simplemigration.metadata.ColumnMetadata;
-import com.sdp4j.simplemigration.metadata.TableMetadata;
+import com.sdp4j.sm4j.annotations.*;
+import com.sdp4j.sm4j.metadata.ColumnMetadata;
+import com.sdp4j.sm4j.metadata.TableMetadata;
 
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -52,7 +53,8 @@ public class MetadataParser {
             ForeignKey foreignKeyAnnotation = classField.getAnnotation(ForeignKey.class);
             Class<?> referenceClass = foreignKeyAnnotation.mapsTo();
             if (referenceClass.getAnnotation(Table.class) == null) {
-                throw new RuntimeException("Class: " + referenceClass.getSimpleName() + " is not annotated with @Table");
+                throw new Sdp4jValidationException(
+                        "Class: " + referenceClass.getSimpleName() + " is not annotated with @Table");
             }
             Table referenceTable = referenceClass.getAnnotation(Table.class);
             String referencedTableName = CommonUtil.isValidString(referenceTable.name())
@@ -67,43 +69,43 @@ public class MetadataParser {
     private void setDefaultValue(Class<?> clazz, Field classField, ColumnMetadata columnMetadata) {
         if (classField.getAnnotation(DefaultDoublePrecision.class) != null) {
             if (!columnMetadata.getType().equals("DOUBLE PRECISION")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultDoublePrecision");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultDoublePrecision");
             }
             columnMetadata.setDefaultDoublePrecisionValue(classField.getAnnotation(DefaultDoublePrecision.class).value());
         }
         if (classField.getAnnotation(DefaultInt.class) != null) {
             if (!columnMetadata.getType().equals("INT")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultInt");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultInt");
             }
             columnMetadata.setDefaultIntValue(classField.getAnnotation(DefaultInt.class).value());
         }
         if (classField.getAnnotation(DefaultTrue.class) != null) {
             if (!columnMetadata.getType().equals("BOOLEAN")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultTrue");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultTrue");
             }
             columnMetadata.setDefaultTrue(true);
         }
         if (classField.getAnnotation(DefaultFalse.class) != null) {
             if (!columnMetadata.getType().equals("BOOLEAN")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultFalse");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultFalse");
             }
             columnMetadata.setDefaultFalse(true);
         }
         if (classField.getAnnotation(DefaultReal.class) != null) {
             if (!columnMetadata.getType().equals("REAL")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultReal");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultReal");
             }
             columnMetadata.setDefaultRealValue(classField.getAnnotation(DefaultReal.class).value());
         }
         if (classField.getAnnotation(DefaultBigInt.class) != null) {
             if (!columnMetadata.getType().equals("BIGINT")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultBigInt");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultBigInt");
             }
             columnMetadata.setDefaultBigIntValue(classField.getAnnotation(DefaultBigInt.class).value());
         }
         if (classField.getAnnotation(DefaultString.class) != null) {
             if (!columnMetadata.getType().equals("VARCHAR(255)")) {
-                throw new RuntimeException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultString");
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultString");
             }
             columnMetadata.setDefaultStringValue(classField.getAnnotation(DefaultString.class).value());
         }
@@ -111,7 +113,7 @@ public class MetadataParser {
 
     private void validateClassFields(Class<?> clazz) {
         if (clazz.getDeclaredFields().length < 1) {
-            throw new RuntimeException("Class: " + clazz.getSimpleName() + " has no fields");
+            throw new Sdp4jValidationException("Class: " + clazz.getSimpleName() + " has no fields");
         }
     }
 
@@ -128,7 +130,7 @@ public class MetadataParser {
 
     private void validateClass(Class<?> clazz) {
         if (!clazz.isAnnotationPresent(Table.class)) {
-            throw new RuntimeException("Class: " + clazz.getSimpleName() + " is not annotated with @Table");
+            throw new Sdp4jValidationException("Class: " + clazz.getSimpleName() + " is not annotated with @Table");
         }
     }
 
@@ -161,6 +163,6 @@ public class MetadataParser {
         if (fieldType == LocalDateTime.class) return "TIMESTAMP";
         if (fieldType == Instant.class) return "TIMESTAMP";
         if (fieldType == UUID.class) return "UUID";
-        throw new RuntimeException("Field: " + fieldType.getName() + " in " + clazz.getSimpleName() + " is not a valid data type");
+        throw new Sdp4jValidationException("Field: " + fieldType.getName() + " in " + clazz.getSimpleName() + " is not a valid data type");
     }
 }

@@ -1,4 +1,4 @@
-package com.sdp4j.simplemigration.metadata;
+package com.sdp4j.sm4j.metadata;
 
 public class ColumnMetadata {
     private String name;

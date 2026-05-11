@@ -7,6 +7,7 @@
       <w>ddls</w>
       <w>indexname</w>
       <w>schemaname</w>
+      <w>tablename</w>
     </words>
   </dictionary>
 </component>

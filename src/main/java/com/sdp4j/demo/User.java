@@ -1,9 +1,9 @@
 package com.sdp4j.demo;
 
-import com.sdp4j.simplemigration.annotations.DefaultFalse;
-import com.sdp4j.simplemigration.annotations.NotNull;
-import com.sdp4j.simplemigration.annotations.PrimaryKey;
-import com.sdp4j.simplemigration.annotations.Table;
+import com.sdp4j.sm4j.annotations.DefaultFalse;
+import com.sdp4j.sm4j.annotations.NotNull;
+import com.sdp4j.sm4j.annotations.PrimaryKey;
+import com.sdp4j.sm4j.annotations.Table;
 
 @Table(name = "users", mapToSnakeCase = true)
 public class User {
