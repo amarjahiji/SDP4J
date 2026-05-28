@@ -7,25 +7,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
-public class EntityDescriptor {
-
-    private final Class<?> javaClass;
-    private final TableMetadata tableMetadata;
-    private final Map<String, Field> fieldByColumn;
-
-    public EntityDescriptor(Class<?> javaClass, TableMetadata tableMetadata, Map<String, Field> fieldByColumn) {
-        this.javaClass = javaClass;
-        this.tableMetadata = tableMetadata;
-        this.fieldByColumn = fieldByColumn;
-    }
-
-    public Class<?> javaClass() {
-        return javaClass;
-    }
-
-    public TableMetadata tableMetadata() {
-        return tableMetadata;
-    }
+public record EntityDescriptor(Class<?> javaClass, TableMetadata tableMetadata, Map<String, Field> fieldByColumn) {
 
     public String tableName() {
         return tableMetadata.getName();
@@ -33,10 +15,6 @@ public class EntityDescriptor {
 
     public List<ColumnMetadata> columns() {
         return tableMetadata.getColumnMetadata();
-    }
-
-    public Map<String, Field> fieldByColumn() {
-        return fieldByColumn;
     }
 
     public boolean hasColumn(String columnName) {

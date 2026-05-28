@@ -1,5 +1,7 @@
 package com.sdp4j.sq4j.query;
 
+import com.sdp4j.sq4j.enums.JoinType;
+
 import java.util.Collections;
 import java.util.List;
 

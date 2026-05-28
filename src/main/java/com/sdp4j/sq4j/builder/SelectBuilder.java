@@ -19,7 +19,7 @@ import com.sdp4j.sq4j.metadata.EntityDescriptor;
 import com.sdp4j.sq4j.metadata.EntityMetadataCache;
 import com.sdp4j.sq4j.query.FieldRef;
 import com.sdp4j.sq4j.query.JoinSpec;
-import com.sdp4j.sq4j.query.JoinType;
+import com.sdp4j.sq4j.enums.JoinType;
 import com.sdp4j.sq4j.query.SelectQuery;
 import com.sdp4j.sq4j.query.TableRef;
 import com.sdp4j.sq4j.render.RenderContext;

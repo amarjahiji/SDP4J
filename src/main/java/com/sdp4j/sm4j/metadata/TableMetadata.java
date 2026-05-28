@@ -9,9 +9,6 @@ public class TableMetadata {
     private Map<Integer, String[]> uniqueKeysConstraints;
     private boolean snakeCase;
 
-    public TableMetadata() {
-    }
-
     public TableMetadata(String name, Map<Integer, String[]> uniqueKeysConstraints, boolean snakeCase) {
         this.name = name;
         this.uniqueKeysConstraints = uniqueKeysConstraints;

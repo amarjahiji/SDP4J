@@ -20,11 +20,6 @@ public class ColumnMetadata {
     public ColumnMetadata() {
     }
 
-    public ColumnMetadata(String name, String type) {
-        this.name = name;
-        this.type = type;
-    }
-
     public String getName() {
         return name;
     }

@@ -1,4 +1,4 @@
-package com.sdp4j.sq4j.query;
+package com.sdp4j.sq4j.enums;
 
 public enum JoinType {
 

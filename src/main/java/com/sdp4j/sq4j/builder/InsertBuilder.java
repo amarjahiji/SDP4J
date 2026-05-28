@@ -21,7 +21,6 @@ import java.util.Set;
 
 public class InsertBuilder<T> implements InsertValuesStep<T>, InsertExecuteStep {
 
-    private final EntityMetadataCache entityMetadataCache;
     private final QueryExecutor queryExecutor;
     private final SqlDialect dialect;
     private final Class<T> entityClass;
@@ -34,7 +33,6 @@ public class InsertBuilder<T> implements InsertValuesStep<T>, InsertExecuteStep 
 
     public InsertBuilder(EntityMetadataCache entityMetadataCache, QueryExecutor queryExecutor, SqlDialect dialect,
                          Class<T> entityClass) {
-        this.entityMetadataCache = entityMetadataCache;
         this.queryExecutor = queryExecutor;
         this.dialect = dialect;
         this.entityClass = entityClass;

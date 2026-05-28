@@ -288,8 +288,8 @@ public class SM4J {
     private PendingDeleteModifyStepsMetadata parsePendingDeleteModifyExistingSchemaElementsMetadata(List<MigrationStepMetadata> userStepsToApply) {
         PendingDeleteModifyStepsMetadata metadata = new PendingDeleteModifyStepsMetadata();
         for (MigrationStepMetadata step : userStepsToApply) {
-            List<String> args = step.getArgs();
-            switch (step.getVerb()) {
+            List<String> args = step.args();
+            switch (step.verb()) {
                 case "renameColumn" -> {
                     if (args.size() >= 3) {
                         metadata.getRenameColumns()
@@ -396,12 +396,12 @@ public class SM4J {
     }
 
     private void executeMigrations(MigrationMetadata migration) {
-        List<MigrationStepMetadata> steps = migration.getSteps();
+        List<MigrationStepMetadata> steps = migration.steps();
         if (!CommonUtil.isValidCollection(steps)) {
             return;
         }
         for (MigrationStepMetadata step : steps) {
-            if (!CommonUtil.isValidString(step.getDdl())) {
+            if (!CommonUtil.isValidString(step.ddl())) {
                 throw new Sdp4jValidationException("Migration step '" + step.getAction() + "' has an empty DDL");
             }
         }
@@ -413,7 +413,7 @@ public class SM4J {
                     acquireMigrationLock(connection);
                     UUID migrationId = insertMigration(connection);
                     for (MigrationStepMetadata step : steps) {
-                        ddlSt.addBatch(step.getDdl());
+                        ddlSt.addBatch(step.ddl());
                         stepPs.setObject(1, UUID.randomUUID());
                         stepPs.setString(2, step.getAction());
                         stepPs.setObject(3, migrationId);
@@ -530,7 +530,7 @@ public class SM4J {
             if (counts[i] == Statement.EXECUTE_FAILED) {
                 Object item = items.get(i);
                 String desc = item instanceof MigrationStepMetadata step
-                        ? step.getAction() + " -> " + step.getDdl()
+                        ? step.getAction() + " -> " + step.ddl()
                         : String.valueOf(item);
                 return prefix + " at step " + i + ": " + desc;
             }
