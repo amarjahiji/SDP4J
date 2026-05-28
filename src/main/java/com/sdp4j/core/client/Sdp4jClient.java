@@ -2,7 +2,8 @@ package com.sdp4j.core.client;
 
 import com.sdp4j.core.exception.Sdp4jConfigurationException;
 import com.sdp4j.core.util.CommonUtil;
-import com.sdp4j.sm4j.services.Migration;
+import com.sdp4j.sm4j.SM4J;
+import com.sdp4j.sq4j.SQ4J;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -12,18 +13,21 @@ public class Sdp4jClient {
 
     private final DataSource dataSource;
     private final String packageName;
-    private final Migration migration;
+    private final SM4J sm4j;
+    private final SQ4J sq4j;
 
     public Sdp4jClient(String url, String username, String password, String packageName) {
         this.dataSource = generateDataSource(url, username, password);
         this.packageName = packageName;
-        this.migration = new Migration(this.dataSource, this.packageName);
+        this.sm4j = new SM4J(this.dataSource, this.packageName);
+        this.sq4j = new SQ4J(this.dataSource);
     }
 
     public Sdp4jClient(String packageName, DataSource dataSource) {
         this.dataSource = dataSource;
         this.packageName = packageName;
-        this.migration = new Migration(this.dataSource, this.packageName);
+        this.sm4j = new SM4J(this.dataSource, this.packageName);
+        this.sq4j = new SQ4J(this.dataSource);
     }
 
     private DataSource generateDataSource(String url, String username, String password) {
@@ -55,7 +59,11 @@ public class Sdp4jClient {
         return packageName;
     }
 
-    public Migration getMigration() {
-        return migration;
+    public SM4J getSm4j() {
+        return sm4j;
+    }
+
+    public SQ4J getSq4j() {
+        return sq4j;
     }
 }

@@ -1,6 +1,6 @@
 package com.sdp4j.sm4j.annotations;
 
-import com.sdp4j.core.enums.OnDelete;
+import com.sdp4j.sm4j.enums.OnDelete;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
