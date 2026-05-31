@@ -2,9 +2,8 @@ package com.sdp4j.demo;
 
 import com.sdp4j.core.client.Sdp4jClient;
 import com.sdp4j.sq4j.SQ4J;
-import com.sdp4j.sq4j.query.SelectQuery;
-import com.sdp4j.sq4j.render.PostgresDialect;
-import com.sdp4j.sq4j.render.RenderContext;
+import com.sdp4j.sq4j.queryinternals.SelectQuery;
+import com.sdp4j.sq4j.renderers.RenderContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -88,7 +87,8 @@ public class QueryDemo {
     private void case4_simpleEqualityWithBinding() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("is_active = ?", true)
+                .where("is_active = :is_active")
+                .set(":is_active", true)
                 .mapTo(User.class);
         System.out.println("case4 rows=" + users.size());
     }
@@ -96,7 +96,9 @@ public class QueryDemo {
     private void case5_andClauseWithMultipleBindings() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("is_active = ? AND first_name = ?", true, "Alice")
+                .where("is_active = :is_active AND first_name = :first_name")
+                .set(":is_active", true)
+                .set(":first_name", "Alice")
                 .mapTo(User.class);
         System.out.println("case5 rows=" + users.size());
     }
@@ -104,7 +106,9 @@ public class QueryDemo {
     private void case6_orClause() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("first_name = ? OR first_name = ?", "Alice", "Bob")
+                .where("first_name = :first OR first_name = :second")
+                .set(":first", "Alice")
+                .set(":second", "Bob")
                 .mapTo(User.class);
         System.out.println("case6 rows=" + users.size());
     }
@@ -112,7 +116,10 @@ public class QueryDemo {
     private void case7_mixedAndOrWithGroups() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("is_active = ? AND (first_name = ? OR first_name = ?)", true, "Alice", "Bob")
+                .where("is_active = :is_active AND (first_name = :first OR first_name = :second)")
+                .set(":is_active", true)
+                .set(":first", "Alice")
+                .set(":second", "Bob")
                 .mapTo(User.class);
         System.out.println("case7 rows=" + users.size());
     }
@@ -120,7 +127,8 @@ public class QueryDemo {
     private void case8_likePattern() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("first_name LIKE ?", "Al%")
+                .where("first_name LIKE :pattern")
+                .set(":pattern", "Al%")
                 .mapTo(User.class);
         System.out.println("case8 rows=" + users.size());
     }
@@ -128,7 +136,8 @@ public class QueryDemo {
     private void case9_inWithCollectionExpansion() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("first_name IN ?", List.of("Alice", "Bob", "Carol"))
+                .where("first_name IN :names")
+                .set(":names", List.of("Alice", "Bob", "Carol"))
                 .mapTo(User.class);
         System.out.println("case9 rows=" + users.size());
     }
@@ -144,7 +153,8 @@ public class QueryDemo {
     private void case11_notExpression() {
         List<User> users = sq4j.select("id", "is_active")
                 .from(User.class)
-                .where("NOT (is_active = ?)", false)
+                .where("NOT (is_active = :is_active)")
+                .set(":is_active", false)
                 .mapTo(User.class);
         System.out.println("case11 rows=" + users.size());
     }
@@ -152,7 +162,8 @@ public class QueryDemo {
     private void case12_qualifiedColumnInWhere() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("users.first_name = ?", "Alice")
+                .where("users.first_name = :first_name")
+                .set(":first_name", "Alice")
                 .mapTo(User.class);
         System.out.println("case12 rows=" + users.size());
     }
@@ -201,7 +212,8 @@ public class QueryDemo {
     private void case18_mapToOne() {
         Optional<User> maybe = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("first_name = ?", "Alice")
+                .where("first_name = :first_name")
+                .set(":first_name", "Alice")
                 .limit(1)
                 .mapToOne(User.class);
         System.out.println("case18 present=" + maybe.isPresent());
@@ -210,7 +222,8 @@ public class QueryDemo {
     private void case19_mapToOneEmpty() {
         Optional<User> none = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("first_name = ?", "____no_such_user____")
+                .where("first_name = :first_name")
+                .set(":first_name", "____no_such_user____")
                 .mapToOne(User.class);
         System.out.println("case19 empty=" + none.isEmpty());
     }
@@ -218,7 +231,9 @@ public class QueryDemo {
     private void case20_toQueryInspection() {
         SelectQuery query = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("is_active = ? AND first_name > ?", true, "A")
+                .where("is_active = :is_active AND first_name > :first_name")
+                .set(":is_active", true)
+                .set(":first_name", "A")
                 .orderBy("first_name DESC")
                 .limit(10)
                 .toQuery();
@@ -231,11 +246,13 @@ public class QueryDemo {
     private void case21_renderForSqlPreview() {
         SelectQuery query = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("first_name = ? OR first_name IN ?", "Alice", List.of("Bob", "Carol"))
+                .where("first_name = :first_name OR first_name IN :names")
+                .set(":first_name", "Alice")
+                .set(":names", List.of("Bob", "Carol"))
                 .orderBy("first_name ASC")
                 .limit(5, 10)
                 .toQuery();
-        RenderContext ctx = new RenderContext(new PostgresDialect());
+        RenderContext ctx = new RenderContext();
         query.render(ctx);
         System.out.println("case21 sql=" + ctx.sql());
         System.out.println("case21 bindings=" + ctx.bindings());
@@ -252,7 +269,8 @@ public class QueryDemo {
     private void case23_unknownColumnInWhereIsRejected() {
         try {
             sq4j.select("id").from(User.class)
-                    .where("ghost = ?", 1)
+                    .where("ghost = :ghost")
+                    .set(":ghost", 1)
                     .mapTo(User.class);
         } catch (RuntimeException e) {
             System.out.println("case23 rejected: " + e.getMessage());
@@ -262,7 +280,8 @@ public class QueryDemo {
     private void case24_unknownTableQualifierIsRejected() {
         try {
             sq4j.select("id").from(User.class)
-                    .where("roles.id = ?", 1)
+                    .where("roles.id = :id")
+                    .set(":id", 1)
                     .mapTo(User.class);
         } catch (RuntimeException e) {
             System.out.println("case24 rejected: " + e.getMessage());
@@ -272,7 +291,8 @@ public class QueryDemo {
     private void case25_mismatchedBindingsRejected() {
         try {
             sq4j.select("id").from(User.class)
-                    .where("first_name = ? AND last_name = ?", "Alice")
+                    .where("first_name = :first_name AND last_name = :last_name")
+                    .set(":first_name", "Alice")
                     .mapTo(User.class);
         } catch (RuntimeException e) {
             System.out.println("case25 rejected: " + e.getMessage());
@@ -282,7 +302,9 @@ public class QueryDemo {
     private void case26_inWithMixedScalarAndCollection() {
         List<User> users = sq4j.select("id", "first_name")
                 .from(User.class)
-                .where("is_active = ? AND first_name IN ?", true, List.of("Alice", "Bob"))
+                .where("is_active = :is_active AND first_name IN :names")
+                .set(":is_active", true)
+                .set(":names", List.of("Alice", "Bob"))
                 .mapTo(User.class);
         System.out.println("case26 rows=" + users.size());
     }
@@ -295,7 +317,8 @@ public class QueryDemo {
     private void case28_selectStarWithWhere() {
         List<User> users = sq4j.select("*")
                 .from(User.class)
-                .where("is_active = ?", true)
+                .where("is_active = :is_active")
+                .set(":is_active", true)
                 .mapTo(User.class);
         System.out.println("case28 rows=" + users.size());
     }
@@ -312,7 +335,8 @@ public class QueryDemo {
         List<User> users = sq4j.select("first_name", "last_name")
                 .from(User.class)
                 .distinct()
-                .where("is_active = ?", true)
+                .where("is_active = :is_active")
+                .set(":is_active", true)
                 .orderBy("first_name ASC")
                 .limit(10)
                 .mapTo(User.class);
@@ -360,12 +384,12 @@ public class QueryDemo {
     }
 
     private void case36_ambiguousBareColumnInWhereIsRejected() {
-        // 'id' exists on both User and Role — must qualify.
         try {
             sq4j.select("u.id")
                     .from(User.class, "u")
                     .innerJoin(Role.class, "r").on("u.id = r.user_id")
-                    .where("id = ?", "abc")
+                    .where("id = :id")
+                    .set(":id", "abc")
                     .mapTo(User.class);
         } catch (RuntimeException e) {
             System.out.println("case36 rejected: " + e.getMessage());
@@ -376,7 +400,8 @@ public class QueryDemo {
         List<User> users = sq4j.select("u.id")
                 .from(User.class, "u")
                 .innerJoin(Role.class, "r").on("u.id = r.user_id")
-                .where("u.id = ?", "abc")
+                .where("u.id = :id")
+                .set(":id", "abc")
                 .mapTo(User.class);
         System.out.println("case37 rows=" + users.size());
     }
@@ -386,7 +411,9 @@ public class QueryDemo {
                 .from(User.class, "u")
                 .innerJoin(Role.class, "r").on("u.id = r.user_id")
                 .distinct()
-                .where("u.is_active = ? AND r.name IN ?", true, List.of("admin", "editor"))
+                .where("u.is_active = :is_active AND r.name IN :names")
+                .set(":is_active", true)
+                .set(":names", List.of("admin", "editor"))
                 .orderBy("u.first_name ASC")
                 .limit(50)
                 .mapTo(User.class);
@@ -398,7 +425,8 @@ public class QueryDemo {
                 .from(User.class, "u")
                 .innerJoin(Role.class, "r").on("u.id = r.user_id")
                 .leftJoin(Role.class, "r2").on("u.id = r2.user_id")
-                .where("r.name = ?", "admin")
+                .where("r.name = :name")
+                .set(":name", "admin")
                 .mapTo(User.class);
         System.out.println("case39 rows=" + users.size());
     }
@@ -422,8 +450,6 @@ public class QueryDemo {
     }
 
     private void case42_mapToDtoAcrossJoin() {
-        // The DTO has fields drawn from both User and Role; columns are matched
-        // by their snake-cased Java field name.
         List<UserWithRoleDto> rows = sq4j.select("u.id", "u.first_name", "u.last_name", "u.is_active", "r.name")
                 .from(User.class, "u")
                 .innerJoin(Role.class, "r").on("u.id = r.user_id")
@@ -432,7 +458,6 @@ public class QueryDemo {
     }
 
     private void case43_dtoFieldsWithNoMatchingColumnStayNull() {
-        // 'name' was not selected — DTO.name stays null.
         List<UserWithRoleDto> rows = sq4j.select("id", "first_name")
                 .from(User.class)
                 .mapTo(UserWithRoleDto.class);
@@ -440,7 +465,6 @@ public class QueryDemo {
     }
 
     private void case44_resultColumnsWithNoMatchingDtoFieldIgnored() {
-        // r.user_id is in the projection but UserWithRoleDto has no userId field — silently skipped.
         List<UserWithRoleDto> rows = sq4j.select("u.id", "u.first_name", "r.name", "r.user_id")
                 .from(User.class, "u")
                 .innerJoin(Role.class, "r").on("u.id = r.user_id")

@@ -37,15 +37,40 @@ public class SM4J {
 
     public void executeMigration(List<MigrationStepMetadata> dropAndOrModifySteps) {
         List<Class<?>> tableAnnotatedClasses = getTableAnnotatedClasses();
-        List<String> existingDbTablesNames = getExistingDbTablesNames();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                acquireMigrationLock(connection);
+                planAndApplyMigration(connection, tableAnnotatedClasses, dropAndOrModifySteps);
+                connection.commit();
+            } catch (SQLException | RuntimeException e) {
+                rollbackQuietly(connection, e);
+                throw (e instanceof Sm4jException sm) ? sm : new Sm4jException("Failed to execute migration", e);
+            }
+        } catch (SQLException e) {
+            throw new Sm4jException("Failed to execute migration", e);
+        }
+    }
+
+    private void rollbackQuietly(Connection connection, Throwable primary) {
+        try {
+            connection.rollback();
+        } catch (SQLException rollbackEx) {
+            primary.addSuppressed(rollbackEx);
+        }
+    }
+
+    private void planAndApplyMigration(Connection connection, List<Class<?>> tableAnnotatedClasses,
+                                       List<MigrationStepMetadata> dropAndOrModifySteps) {
+        List<String> existingDbTablesNames = getExistingDbTablesNames(connection);
         if (!existsMigrationInDb(existingDbTablesNames)) {
-            executeInitialSchemaMigration(tableAnnotatedClasses);
+            applyInitialSchemaMigration(connection, tableAnnotatedClasses);
             return;
         }
-        List<MigrationStepMetadata> dropAndOrModifyStepsToApply = filterOutAlreadyAppliedSteps(dropAndOrModifySteps);
+        List<MigrationStepMetadata> dropAndOrModifyStepsToApply = filterOutAlreadyAppliedSteps(connection, dropAndOrModifySteps);
         PendingDeleteModifyStepsMetadata pendingDeleteModifyStepsMetadata = parsePendingDeleteModifyExistingSchemaElementsMetadata(dropAndOrModifyStepsToApply);
         Set<String> tablesToInspect = findTablesToInspect(tableAnnotatedClasses, existingDbTablesNames, pendingDeleteModifyStepsMetadata);
-        Map<String, List<String>> columnsByTable = getColumnNamesGroupedByTablesNames(tablesToInspect);
+        Map<String, List<String>> columnsByTable = getColumnNamesGroupedByTablesNames(connection, tablesToInspect);
         PendingAdditiveStepsMetadata pendingAdditiveStepsMetadata = buildPendingAdditiveStepsMetadata(tableAnnotatedClasses, existingDbTablesNames, columnsByTable, pendingDeleteModifyStepsMetadata);
 
         List<MigrationStepMetadata> orderedStepsToApplyMetadata = new ArrayList<>();
@@ -54,15 +79,15 @@ public class SM4J {
         orderedStepsToApplyMetadata.addAll(dropAndOrModifyStepsToApply);
         orderedStepsToApplyMetadata.addAll(pendingAdditiveStepsMetadata.getAddForeignKey());
         orderedStepsToApplyMetadata.addAll(pendingAdditiveStepsMetadata.getAddIndex());
-        executeMigrations(new MigrationMetadata(orderedStepsToApplyMetadata));
+        applyMigrations(connection, new MigrationMetadata(orderedStepsToApplyMetadata));
     }
 
     private boolean existsMigrationInDb(List<String> existingDbTablesNames) {
         return existingDbTablesNames.contains("migrations") && existingDbTablesNames.contains("migration_steps");
     }
 
-    private List<MigrationStepMetadata> filterOutAlreadyAppliedSteps(List<MigrationStepMetadata> dropModifyStepsMetadata) {
-        Set<String> applied = new HashSet<>(getSortedAppliedStepActions());
+    private List<MigrationStepMetadata> filterOutAlreadyAppliedSteps(Connection connection, List<MigrationStepMetadata> dropModifyStepsMetadata) {
+        Set<String> applied = new HashSet<>(getSortedAppliedStepActions(connection));
         return dropModifyStepsMetadata.stream()
                 .filter(s -> !applied.contains(s.getAction()))
                 .toList();
@@ -253,7 +278,7 @@ public class SM4J {
         }
     }
 
-    private void executeInitialSchemaMigration(List<Class<?>> classesToMigrate) {
+    private void applyInitialSchemaMigration(Connection connection, List<Class<?>> classesToMigrate) {
         List<String> ddls = new ArrayList<>();
         ddls.add(Sql.CREATE_MIGRATIONS_TABLE);
         ddls.add(Sql.CREATE_MIGRATION_STEPS_TABLE);
@@ -264,24 +289,12 @@ public class SM4J {
             ddls.addAll(addDdlGenerator.generateAddForeignKeys(tableMetadata));
             ddls.addAll(addDdlGenerator.generateIndicesDdls(tableMetadata));
         }
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                acquireMigrationLock(connection);
-                executeDdls(connection, ddls);
-                UUID migrationId = insertMigration(connection);
-                insertMigrationStep(connection, migrationId);
-                connection.commit();
-            } catch (SQLException e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackEx) {
-                    e.addSuppressed(rollbackEx);
-                }
-                throw new Sm4jException(describeBatchFailure("Failed to execute initial schema migration", e, ddls), e);
-            }
+        try {
+            executeDdls(connection, ddls);
+            UUID migrationId = insertMigration(connection);
+            insertMigrationStep(connection, migrationId);
         } catch (SQLException e) {
-            throw new Sm4jException("Failed to execute initial schema migration", e);
+            throw new Sm4jException(describeBatchFailure("Failed to execute initial schema migration", e, ddls), e);
         }
     }
 
@@ -340,13 +353,12 @@ public class SM4J {
                 .toList();
     }
 
-    private Map<String, List<String>> getColumnNamesGroupedByTablesNames(Collection<String> tableNames) {
+    private Map<String, List<String>> getColumnNamesGroupedByTablesNames(Connection connection, Collection<String> tableNames) {
         Map<String, List<String>> result = new HashMap<>();
         if (tableNames.isEmpty()) {
             return result;
         }
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(Sql.GET_TABLES_COLUMNS)) {
+        try (PreparedStatement ps = connection.prepareStatement(Sql.GET_TABLES_COLUMNS)) {
             String schema = CommonUtil.getOrDefault(connection.getSchema(), "public");
             Array tablesArray = connection.createArrayOf("VARCHAR", tableNames.toArray());
             ps.setString(1, schema);
@@ -365,10 +377,9 @@ public class SM4J {
     }
 
 
-    private List<String> getExistingDbTablesNames() {
+    private List<String> getExistingDbTablesNames(Connection connection) {
         List<String> tablesNames = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(Sql.GET_TABLES_NAMES)) {
+        try (PreparedStatement ps = connection.prepareStatement(Sql.GET_TABLES_NAMES)) {
             ps.setString(1, CommonUtil.getOrDefault(connection.getSchema(), "public"));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -381,10 +392,9 @@ public class SM4J {
         return tablesNames;
     }
 
-    private List<String> getSortedAppliedStepActions() {
+    private List<String> getSortedAppliedStepActions(Connection connection) {
         List<String> actions = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             Statement st = connection.createStatement();
+        try (Statement st = connection.createStatement();
              ResultSet rs = st.executeQuery(Sql.GET_SORTED_STEP_ACTIONS)) {
             while (rs.next()) {
                 actions.add(rs.getString("action"));
@@ -395,7 +405,7 @@ public class SM4J {
         return actions;
     }
 
-    private void executeMigrations(MigrationMetadata migration) {
+    private void applyMigrations(Connection connection, MigrationMetadata migration) {
         List<MigrationStepMetadata> steps = migration.steps();
         if (!CommonUtil.isValidCollection(steps)) {
             return;
@@ -405,34 +415,20 @@ public class SM4J {
                 throw new Sdp4jValidationException("Migration step '" + step.getAction() + "' has an empty DDL");
             }
         }
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            try (Statement ddlSt = connection.createStatement();
-                 PreparedStatement stepPs = connection.prepareStatement(Sql.INSERT_MIGRATION_STEP)) {
-                try {
-                    acquireMigrationLock(connection);
-                    UUID migrationId = insertMigration(connection);
-                    for (MigrationStepMetadata step : steps) {
-                        ddlSt.addBatch(step.ddl());
-                        stepPs.setObject(1, UUID.randomUUID());
-                        stepPs.setString(2, step.getAction());
-                        stepPs.setObject(3, migrationId);
-                        stepPs.addBatch();
-                    }
-                    ddlSt.executeBatch();
-                    stepPs.executeBatch();
-                    connection.commit();
-                } catch (SQLException e) {
-                    try {
-                        connection.rollback();
-                    } catch (SQLException rollbackEx) {
-                        e.addSuppressed(rollbackEx);
-                    }
-                    throw new Sm4jException(describeBatchFailure("Failed to execute migrations", e, steps), e);
-                }
+        try (Statement ddlSt = connection.createStatement();
+             PreparedStatement stepPs = connection.prepareStatement(Sql.INSERT_MIGRATION_STEP)) {
+            UUID migrationId = insertMigration(connection);
+            for (MigrationStepMetadata step : steps) {
+                ddlSt.addBatch(step.ddl());
+                stepPs.setObject(1, UUID.randomUUID());
+                stepPs.setString(2, step.getAction());
+                stepPs.setObject(3, migrationId);
+                stepPs.addBatch();
             }
+            ddlSt.executeBatch();
+            stepPs.executeBatch();
         } catch (SQLException e) {
-            throw new Sm4jException("Failed to execute migrations", e);
+            throw new Sm4jException(describeBatchFailure("Failed to execute migrations", e, steps), e);
         }
     }
 
@@ -544,6 +540,7 @@ public class SM4J {
                 || col.getDefaultBigIntValue() != null
                 || col.getDefaultRealValue() != null
                 || col.getDefaultDoublePrecisionValue() != null
+                || col.getDefaultNumericValue() != null
                 || col.getDefaultStringValue() != null;
     }
 

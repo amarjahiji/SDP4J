@@ -7,6 +7,7 @@ import com.sdp4j.sm4j.metadata.ColumnMetadata;
 import com.sdp4j.sm4j.metadata.TableMetadata;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,7 +33,7 @@ public class MetadataParser {
     private ColumnMetadata parseColumnMetadata(Class<?> clazz, TableMetadata tableMetadata, Field classField) {
         ColumnMetadata columnMetadata = new ColumnMetadata();
         columnMetadata.setName(tableMetadata.isSnakeCase() ? CommonUtil.toSnakeCase(classField.getName()) : classField.getName());
-        columnMetadata.setType(mapType(clazz, classField.getType()));
+        columnMetadata.setType(resolveColumnType(clazz, classField));
         if (classField.getAnnotation(PrimaryKey.class) != null) {
             columnMetadata.setPrimaryKey(true);
             columnMetadata.setNullable(false);
@@ -104,10 +105,26 @@ public class MetadataParser {
             columnMetadata.setDefaultBigIntValue(classField.getAnnotation(DefaultBigInt.class).value());
         }
         if (classField.getAnnotation(DefaultString.class) != null) {
-            if (!columnMetadata.getType().equals("VARCHAR(255)")) {
+            if (!columnMetadata.getType().startsWith("VARCHAR(")) {
                 throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultString");
             }
             columnMetadata.setDefaultStringValue(classField.getAnnotation(DefaultString.class).value());
+        }
+        if (classField.getAnnotation(DefaultNumeric.class) != null) {
+            if (!columnMetadata.getType().equals("NUMERIC")) {
+                throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName() + " cannot have annotation @DefaultNumeric");
+            }
+            String raw = classField.getAnnotation(DefaultNumeric.class).value();
+            columnMetadata.setDefaultNumericValue(normalizeNumericDefault(clazz, classField, raw));
+        }
+    }
+
+    private String normalizeNumericDefault(Class<?> clazz, Field classField, String raw) {
+        try {
+            return new BigDecimal(raw.trim()).toPlainString();
+        } catch (NumberFormatException e) {
+            throw new Sdp4jValidationException("Field: " + classField.getName() + " in " + clazz.getSimpleName()
+                    + " has @DefaultNumeric(\"" + raw + "\"); value must be a valid decimal");
         }
     }
 
@@ -152,12 +169,32 @@ public class MetadataParser {
         return uniqueKeysConstraints;
     }
 
+    private String resolveColumnType(Class<?> clazz, Field classField) {
+        Length length = classField.getAnnotation(Length.class);
+        if (classField.getType() == String.class) {
+            int size = 255;
+            if (length != null) {
+                if (length.value() <= 0) {
+                    throw new Sdp4jValidationException("Field: " + classField.getName() + " in "
+                            + clazz.getSimpleName() + " has @Length(" + length.value() + "); value must be > 0");
+                }
+                size = length.value();
+            }
+            return "VARCHAR(" + size + ")";
+        }
+        if (length != null) {
+            throw new Sdp4jValidationException("Field: " + classField.getName() + " in "
+                    + clazz.getSimpleName() + " has @Length but is not a String field");
+        }
+        return mapType(clazz, classField.getType());
+    }
+
     private String mapType(Class<?> clazz, Class<?> fieldType) {
-        if (fieldType == String.class) return "VARCHAR(255)";
         if (fieldType == Long.class || fieldType == long.class) return "BIGINT";
         if (fieldType == Integer.class || fieldType == int.class) return "INT";
         if (fieldType == Double.class || fieldType == double.class) return "DOUBLE PRECISION";
         if (fieldType == Float.class || fieldType == float.class) return "REAL";
+        if (fieldType == BigDecimal.class) return "NUMERIC";
         if (fieldType == Boolean.class || fieldType == boolean.class) return "BOOLEAN";
         if (fieldType == LocalDate.class) return "DATE";
         if (fieldType == LocalDateTime.class) return "TIMESTAMP";

@@ -1,6 +1,5 @@
 package com.sdp4j.core.util;
 
-import java.sql.*;
 import java.util.Collection;
 
 public class CommonUtil {
@@ -11,7 +10,6 @@ public class CommonUtil {
         if (!isValidString(input)) {
             return input;
         }
-
         StringBuilder result = new StringBuilder();
         char[] chars = input.trim().toCharArray();
 
@@ -43,18 +41,6 @@ public class CommonUtil {
         return str != null && !str.isBlank();
     }
 
-    public static boolean areValidStrings(String... str) {
-        if (str == null || str.length == 0) {
-            return false;
-        }
-        for (String s : str) {
-            if (!isValidString(s)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public static boolean areValidSqlIdentifiers(String... identifier) {
         if (identifier == null || identifier.length == 0) {
             return false;
@@ -77,27 +63,4 @@ public class CommonUtil {
         return defaultValue;
     }
 
-    public static void close(ResultSet rs, PreparedStatement ps, Connection connection) throws SQLException {
-        if (rs != null) {
-            rs.close();
-        }
-        if (ps != null) {
-            ps.close();
-        }
-        if (connection != null) {
-            connection.close();
-        }
-    }
-
-    public static void close(ResultSet rs, Statement st, Connection connection) throws SQLException {
-        if (rs != null) {
-            rs.close();
-        }
-        if (st != null) {
-            st.close();
-        }
-        if (connection != null) {
-            connection.close();
-        }
-    }
 }

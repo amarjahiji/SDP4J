@@ -10,7 +10,7 @@ import java.util.Optional;
 public class AddDdlsGenerator extends CommonDdlsGenerator {
 
     public String generateAddColumn(String tableName, ColumnMetadata column) {
-        return "ALTER TABLE " + tableName + " ADD COLUMN " + generateColumn(column) + ";";
+        return "ALTER TABLE " + tableName + " ADD COLUMN IF NOT EXISTS " + generateColumn(column) + ";";
     }
 
     public List<String> generateAddForeignKeys(TableMetadata tableMetadata) {
@@ -25,12 +25,11 @@ public class AddDdlsGenerator extends CommonDdlsGenerator {
         if (column.getForeignKeyTableReference() == null) {
             return Optional.empty();
         }
-        StringBuilder ddl = new StringBuilder("ALTER TABLE ")
+        String constraintName = "fk_" + tableName + "_" + column.getName();
+        StringBuilder alter = new StringBuilder("ALTER TABLE ")
                 .append(tableName)
-                .append(" ADD CONSTRAINT fk_")
-                .append(tableName)
-                .append("_")
-                .append(column.getName())
+                .append(" ADD CONSTRAINT ")
+                .append(constraintName)
                 .append(" FOREIGN KEY (")
                 .append(column.getName())
                 .append(") REFERENCES ")
@@ -39,10 +38,14 @@ public class AddDdlsGenerator extends CommonDdlsGenerator {
                 .append(column.getForeignKeyReferencedColumn())
                 .append(")");
         if (column.getForeignKeyOnDeleteAction() != null) {
-            ddl.append(" ON DELETE ").append(column.getForeignKeyOnDeleteAction());
+            alter.append(" ON DELETE ").append(column.getForeignKeyOnDeleteAction());
         }
-        ddl.append(";");
-        return Optional.of(ddl.toString());
+        String ddl = "DO $$ BEGIN"
+                + " IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '" + constraintName + "') THEN "
+                + alter + ";"
+                + " END IF;"
+                + " END $$;";
+        return Optional.of(ddl);
     }
 
     public List<String> generateIndicesDdls(TableMetadata tableMetadata) {

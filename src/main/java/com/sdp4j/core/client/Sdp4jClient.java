@@ -3,11 +3,16 @@ package com.sdp4j.core.client;
 import com.sdp4j.core.exception.Sdp4jConfigurationException;
 import com.sdp4j.core.util.CommonUtil;
 import com.sdp4j.sm4j.SM4J;
+import com.sdp4j.sps4j.SPS4J;
+import com.sdp4j.sps4j.steps.ConnectionStep;
+import com.sdp4j.sps4j.steps.InitStep;
 import com.sdp4j.sq4j.SQ4J;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
 
 public class Sdp4jClient {
 
@@ -65,5 +70,33 @@ public class Sdp4jClient {
 
     public SQ4J getSq4j() {
         return sq4j;
+    }
+
+    public ConnectionStep getSps4j() {
+        return new InitStep();
+    }
+
+    public void closeResources(ResultSet resultSet, Connection connection, SPS4J... statements) {
+        closeQuietly(resultSet);
+        if (statements != null) {
+            for (SPS4J statement : statements) {
+                closeQuietly(statement);
+            }
+        }
+        closeQuietly(connection);
+    }
+
+    public void closeResources(Connection connection, SPS4J... statements) {
+        closeResources(null, connection, statements);
+    }
+
+    private void closeQuietly(AutoCloseable resource) {
+        if (resource == null) {
+            return;
+        }
+        try {
+            resource.close();
+        } catch (Exception _) {
+        }
     }
 }

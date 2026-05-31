@@ -12,6 +12,7 @@ public class ColumnMetadata {
     private Float defaultRealValue;
     private Long defaultBigIntValue;
     private String defaultStringValue;
+    private String defaultNumericValue;
     private String foreignKeyTableReference;
     private String foreignKeyReferencedColumn;
     private String foreignKeyOnDeleteAction;
@@ -106,6 +107,14 @@ public class ColumnMetadata {
 
     public void setDefaultStringValue(String defaultStringValue) {
         this.defaultStringValue = defaultStringValue;
+    }
+
+    public String getDefaultNumericValue() {
+        return defaultNumericValue;
+    }
+
+    public void setDefaultNumericValue(String defaultNumericValue) {
+        this.defaultNumericValue = defaultNumericValue;
     }
 
     public String getForeignKeyTableReference() {

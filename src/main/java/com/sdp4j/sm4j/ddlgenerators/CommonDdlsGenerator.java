@@ -42,6 +42,8 @@ public class CommonDdlsGenerator {
             defaultValue.append(" ").append(columnMetadata.getDefaultRealValue());
         } else if (columnMetadata.getDefaultBigIntValue() != null) {
             defaultValue.append(" ").append(columnMetadata.getDefaultBigIntValue());
+        } else if (columnMetadata.getDefaultNumericValue() != null) {
+            defaultValue.append(" ").append(columnMetadata.getDefaultNumericValue());
         } else if (columnMetadata.getDefaultStringValue() != null) {
             defaultValue.append(" '").append(columnMetadata.getDefaultStringValue()).append("'");
         } else {

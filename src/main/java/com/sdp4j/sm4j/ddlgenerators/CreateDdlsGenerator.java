@@ -15,7 +15,7 @@ public class CreateDdlsGenerator extends CommonDdlsGenerator {
                 .map(this::generateColumn)
                 .collect(Collectors.joining(",\n"));
         String primaryKeysDdl = generatePrimaryKeys(table.getColumnMetadata(), table.getName());
-        return "\nCREATE TABLE " + table.getName() + " (\n" +
+        return "\nCREATE TABLE IF NOT EXISTS " + table.getName() + " (\n" +
                 columnDdl +
                 ",\n" + primaryKeysDdl +
                 "\n" + generateUniqueKeysConstraintsForNewTable(table) +

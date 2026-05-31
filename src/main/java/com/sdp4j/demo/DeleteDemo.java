@@ -2,9 +2,8 @@ package com.sdp4j.demo;
 
 import com.sdp4j.core.client.Sdp4jClient;
 import com.sdp4j.sq4j.SQ4J;
-import com.sdp4j.sq4j.query.DeleteQuery;
-import com.sdp4j.sq4j.render.PostgresDialect;
-import com.sdp4j.sq4j.render.RenderContext;
+import com.sdp4j.sq4j.queryinternals.DeleteQuery;
+import com.sdp4j.sq4j.renderers.RenderContext;
 
 import java.util.List;
 
@@ -38,28 +37,33 @@ public class DeleteDemo {
 
     private void case2_deleteWithSimpleWhere() {
         int affected = sq4j.deleteFrom(User.class)
-                .where("is_active = ?", false)
+                .where("is_active = :is_active")
+                .set(":is_active", false)
                 .execute();
         System.out.println("case2 deleted=" + affected);
     }
 
     private void case3_deleteWithBindings() {
         int affected = sq4j.deleteFrom(User.class)
-                .where("first_name = ? AND last_name = ?", "Alice", "Smith")
+                .where("first_name = :first_name AND last_name = :last_name")
+                .set(":first_name", "Alice")
+                .set(":last_name", "Smith")
                 .execute();
         System.out.println("case3 deleted=" + affected);
     }
 
     private void case4_deleteWithCollectionExpansion() {
         int affected = sq4j.deleteFrom(User.class)
-                .where("first_name IN ?", List.of("Alice", "Bob", "Carol"))
+                .where("first_name IN :names")
+                .set(":names", List.of("Alice", "Bob", "Carol"))
                 .execute();
         System.out.println("case4 deleted=" + affected);
     }
 
     private void case5_deleteWithAlias() {
         int affected = sq4j.deleteFrom(User.class, "u")
-                .where("u.is_active = ?", false)
+                .where("u.is_active = :is_active")
+                .set(":is_active", false)
                 .execute();
         System.out.println("case5 deleted=" + affected);
     }
@@ -67,7 +71,8 @@ public class DeleteDemo {
     private void case6_unknownColumnInWhereRejected() {
         try {
             sq4j.deleteFrom(User.class)
-                    .where("ghost = ?", 1)
+                    .where("ghost = :ghost")
+                    .set(":ghost", 1)
                     .execute();
         } catch (RuntimeException e) {
             System.out.println("case6 rejected: " + e.getMessage());
@@ -75,10 +80,10 @@ public class DeleteDemo {
     }
 
     private void case7_unknownColumnInProjectionStyleRejected() {
-        // Sanity check: validator still catches typos when alias is used.
         try {
             sq4j.deleteFrom(User.class, "u")
-                    .where("u.ghost = ?", 1)
+                    .where("u.ghost = :ghost")
+                    .set(":ghost", 1)
                     .execute();
         } catch (RuntimeException e) {
             System.out.println("case7 rejected: " + e.getMessage());
@@ -87,7 +92,8 @@ public class DeleteDemo {
 
     private void case8_inspectDeleteQueryAst() {
         DeleteQuery query = sq4j.deleteFrom(User.class)
-                .where("is_active = ?", false)
+                .where("is_active = :is_active")
+                .set(":is_active", false)
                 .toQuery();
         System.out.println("case8 table=" + query.from().name()
                 + " where=" + query.whereSql()
@@ -96,9 +102,11 @@ public class DeleteDemo {
 
     private void case9_previewRenderedSql() {
         DeleteQuery query = sq4j.deleteFrom(User.class, "u")
-                .where("u.first_name IN ? AND u.is_active = ?", List.of("Alice", "Bob"), false)
+                .where("u.first_name IN :names AND u.is_active = :is_active")
+                .set(":names", List.of("Alice", "Bob"))
+                .set(":is_active", false)
                 .toQuery();
-        RenderContext ctx = new RenderContext(new PostgresDialect());
+        RenderContext ctx = new RenderContext();
         query.render(ctx);
         System.out.println("case9 sql=" + ctx.sql());
         System.out.println("case9 bindings=" + ctx.bindings());
@@ -106,7 +114,10 @@ public class DeleteDemo {
 
     private void case10_complexBooleanWhere() {
         int affected = sq4j.deleteFrom(User.class)
-                .where("is_active = ? AND (first_name = ? OR last_name = ?)", false, "Alice", "Smith")
+                .where("is_active = :is_active AND (first_name = :first_name OR last_name = :last_name)")
+                .set(":is_active", false)
+                .set(":first_name", "Alice")
+                .set(":last_name", "Smith")
                 .execute();
         System.out.println("case10 deleted=" + affected);
     }
