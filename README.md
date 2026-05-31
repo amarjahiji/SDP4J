@@ -1,5 +1,10 @@
 # SDP4J — Simple Data Persistence for Java
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.amarjahiji/sdp4j.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.amarjahiji/sdp4j)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-25%2B-orange.svg)](https://openjdk.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-supported-blue.svg)](https://www.postgresql.org/)
+
 A schema-first, lightweight persistence framework for small-to-medium Java projects.
 
 > If you know Java and SQL and you dislike unnecessary complexity, you already know how to use it.
@@ -12,6 +17,11 @@ and visible; the framework is a thin, predictable bridge across it.
 
 PostgreSQL is the initial target dialect, chosen for its transactional DDL: a failed migration is
 rolled back atomically and never leaves the schema half-changed.
+
+> **Project status — pre-release.** SDP4J is functional and demonstrated end-to-end, but it has not
+> yet been hardened with an automated test suite or published to Maven Central. The `1.0.0`
+> coordinates below describe the intended first release. Until then, build from source (see
+> [Building from source](#building-from-source)).
 
 ---
 
@@ -27,7 +37,12 @@ rolled back atomically and never leaves the schema half-changed.
 - [Low-level access (SPS4J)](#low-level-access-sps4j)
 - [Configuration](#configuration)
 - [Design principles](#design-principles)
+- [Building from source](#building-from-source)
+- [Documentation](#documentation)
 - [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Acknowledgements](#acknowledgements)
+- [Author](#author)
 - [License](#license)
 
 ---
@@ -44,12 +59,23 @@ Runtime dependencies: [HikariCP](https://github.com/brettwooldridge/HikariCP) (p
 
 ## Installation
 
+> Available once the first release is published to Maven Central. Until then, see
+> [Building from source](#building-from-source).
+
+**Maven**
+
 ```xml
 <dependency>
-  <groupId>com.sdp4j</groupId>
-  <artifactId>SDP4J</artifactId>
+  <groupId>io.github.amarjahiji</groupId>
+  <artifactId>sdp4j</artifactId>
   <version>1.0.0</version>
 </dependency>
+```
+
+**Gradle (Kotlin DSL)**
+
+```kotlin
+implementation("io.github.amarjahiji:sdp4j:1.0.0")
 ```
 
 ## Quick start
@@ -162,8 +188,9 @@ sm4j.executeMigration(steps);
 ```
 
 Every applied step is recorded in a history table (`migrations` / `migration_steps`) so it runs
-exactly once. The whole operation runs under a PostgreSQL **advisory lock** and inside a **single
-transaction**, so concurrent application instances are safe and a failure rolls back atomically.
+exactly once. The whole operation runs under a PostgreSQL **advisory lock** (acquired before the
+schema is read) and inside a **single transaction**, so concurrent application instances are safe and
+a failure rolls back atomically.
 
 ## High-level queries (SQ4J)
 
@@ -245,6 +272,28 @@ construct your own `DataSource` and use the `Sdp4jClient(packageName, dataSource
 4. **Fail fast.** Columns and bindings are validated against the schema before execution.
 5. **One tool.** Mapping, migrations, and querying under a single mental model.
 
+## Building from source
+
+```bash
+git clone https://github.com/amarjahiji/SDP4J.git
+cd SDP4J
+mvn clean install
+```
+
+This builds the library and installs `io.github.amarjahiji:sdp4j:1.0.0` into your local Maven
+repository, where other local projects can depend on it.
+
+Maintainer release (requires a GPG key and a Maven Central Portal token in `~/.m2/settings.xml`):
+
+```bash
+mvn -Prelease clean deploy
+```
+
+## Documentation
+
+The full project documentation — design rationale, architecture, the migration engine, and the
+two-layer query interface — lives in the [project wiki](https://github.com/amarjahiji/SDP4J/wiki).
+
 ## Roadmap
 
 - CLI for running migrations locally and in deployment pipelines
@@ -253,6 +302,22 @@ construct your own `DataSource` and use the `Sdp4jClient(packageName, dataSource
 - Pluggable dialects beyond PostgreSQL
 - Optional compile-time annotation processing
 
+## Contributing
+
+Issues and pull requests are welcome. For anything beyond a small fix, please open an issue first to
+discuss the change. Bug reports are most useful with a minimal reproducing entity class and the SQL
+or migration that misbehaved.
+
+## Acknowledgements
+
+SDP4J began as the bachelor capstone project of **Amar Jahiji** in Computer Sciences at
+**South East European University (SEEU)**, Faculty of Contemporary Sciences and Technologies, under
+the mentorship of **Prof. Jaumin Ajdari**.
+
+## Author
+
+**Amar Jahiji** — [@amarjahiji](https://github.com/amarjahiji)
+
 ## License
 
-[MIT](LICENSE) © SDP4J contributors
+Released under the [MIT License](LICENSE).
