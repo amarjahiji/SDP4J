@@ -1,4 +1,4 @@
-package com.sdp4j.demo;
+package com.sdp4j.demo.models;
 
 import com.sdp4j.sm4j.annotations.ForeignKey;
 import com.sdp4j.sm4j.annotations.NotNull;

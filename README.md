@@ -18,10 +18,10 @@ and visible; the framework is a thin, predictable bridge across it.
 PostgreSQL is the initial target dialect, chosen for its transactional DDL: a failed migration is
 rolled back atomically and never leaves the schema half-changed.
 
-> **Project status — pre-release.** SDP4J is functional and demonstrated end-to-end, but it has not
-> yet been hardened with an automated test suite or published to Maven Central. The `1.0.0`
-> coordinates below describe the intended first release. Until then, build from source (see
-> [Building from source](#building-from-source)).
+> **Project status — pre-release.** SDP4J is functional, covered by unit and integration tests, and
+> demonstrated end-to-end. It has not yet been published to Maven Central, and a runtime performance
+> benchmark is still to come. The `1.0.0` coordinates below describe the intended first release.
+> Until then, build from source (see [Building from source](#building-from-source)).
 
 ---
 
@@ -38,7 +38,10 @@ rolled back atomically and never leaves the schema half-changed.
 - [Configuration](#configuration)
 - [Design principles](#design-principles)
 - [Building from source](#building-from-source)
+- [Testing](#testing)
+- [Examples](#examples)
 - [Documentation](#documentation)
+- [Architecture](#architecture)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
@@ -149,7 +152,7 @@ List<User> active = sq4j.select("*")
 | `@Index` | field | Creates `idx_<table>_<column>`. |
 | `@UniqueKeysConstraint(keys)` | class (repeatable) | Single- or multi-column unique constraint. |
 | `@Length(n)` | field (String) | `VARCHAR(n)`. Defaults to `VARCHAR(255)` when absent. |
-| `@DefaultInt` / `@DefaultBigInt` / `@DefaultReal` / `@DefaultDoublePrecision` / `@DefaultString` / `@DefaultTrue` / `@DefaultFalse` | field | Typed column default, checked against the column's inferred SQL type. |
+| `@DefaultInt` / `@DefaultBigInt` / `@DefaultReal` / `@DefaultDoublePrecision` / `@DefaultNumeric` / `@DefaultString` / `@DefaultTrue` / `@DefaultFalse` | field | Typed column default, checked against the column's inferred SQL type. |
 
 Generated object names are deterministic and readable: `fk_<table>_<column>`, `idx_<table>_<column>`,
 `uq_<table>_<columns>`.
@@ -289,15 +292,52 @@ Maintainer release (requires a GPG key and a Maven Central Portal token in `~/.m
 mvn -Prelease clean deploy
 ```
 
+## Testing
+
+```bash
+mvn test
+```
+
+The library has two tiers of tests.
+
+**Unit tests** (JUnit 5) run with **no database**: a small harness supplies in-process JDBC fakes —
+a recording `DataSource` whose `Connection`, `PreparedStatement`, and `ResultSet` are dynamic
+proxies — so each test asserts the exact SQL and bound parameters a builder produces and the objects
+a row maps to. They cover metadata parsing, DDL generation, the migration-step model, the query
+builder and its fail-fast validator, the mappers, the low-level wrapper, and the client.
+
+**Integration tests** (`com.sdp4j.it`) run end to end against a **real PostgreSQL** — verifying that
+DDL actually applies, that catalog types match the annotations, that values round-trip with correct
+typing, and that the advisory-lock migration is concurrency-safe (a regression test starts two
+migrators at once and asserts the schema is created exactly once). They use the database at
+`SDP4J_IT_URL` if set, otherwise an ephemeral [Testcontainers](https://testcontainers.com/) Postgres
+when Docker is available, and are **skipped** (not failed) when neither is present, so the build
+stays green anywhere.
+
+## Examples
+
+The `demo` package is runnable, copy-pasteable documentation — `models` (the `User`, `Role`, and
+`Product` entities plus the `UserWithRoleDto` projection) and `runners` (one example per concern:
+migration, query, insert, update, delete, mapping, and low-level SPS4J). All examples share a single
+`ExampleDatabase` (configurable via `SDP4J_URL` / `SDP4J_USER` / `SDP4J_PASSWORD`). Run
+`MigrationDemo` once to create the schema, then any other example — or `RunExamples` to run them all
+in order — against a local PostgreSQL.
+
 ## Documentation
 
 The full project documentation — design rationale, architecture, the migration engine, and the
 two-layer query interface — lives in the [project wiki](https://github.com/amarjahiji/SDP4J/wiki).
 
+For a detailed technical analysis of the design and implementation, see the [Capstone Project Thesis](CapstoneProjectThesis.pdf).
+
+## Architecture
+
+![System Architecture Diagram](systemarchitecturediagram.png)
+
 ## Roadmap
 
 - CLI for running migrations locally and in deployment pipelines
-- Automated test suite (Testcontainers) and performance benchmarks
+- Performance benchmarks against raw JDBC, Hibernate, and jOOQ
 - Explicit transaction handle spanning multiple query calls
 - Pluggable dialects beyond PostgreSQL
 - Optional compile-time annotation processing

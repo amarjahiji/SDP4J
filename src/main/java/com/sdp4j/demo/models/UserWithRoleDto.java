@@ -1,4 +1,4 @@
-package com.sdp4j.demo;
+package com.sdp4j.demo.models;
 
 public class UserWithRoleDto {
 

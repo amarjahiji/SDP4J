@@ -29,6 +29,7 @@ public class WhereClauseValidator {
         int i = 0;
         int length = sqlFragment.length();
         EntityDescriptor pendingQualifierDescriptor = null;
+        boolean pendingPostgresCastType = false;
 
         while (i < length) {
             char c = sqlFragment.charAt(i);
@@ -44,6 +45,7 @@ public class WhereClauseValidator {
             if (c == ':' && i + 1 < length && sqlFragment.charAt(i + 1) == ':') {
                 rewrittenSql.append("::");
                 i += 2;
+                pendingPostgresCastType = true;
                 continue;
             }
 
@@ -79,6 +81,13 @@ public class WhereClauseValidator {
             if (isIdentifierStart(c)) {
                 int endExclusive = consumeIdentifier(sqlFragment, i);
                 String identifier = sqlFragment.substring(i, endExclusive);
+                if (pendingPostgresCastType) {
+                    rewrittenSql.append(identifier);
+                    i = endExclusive;
+                    pendingPostgresCastType = false;
+                    pendingQualifierDescriptor = null;
+                    continue;
+                }
                 int nextNonWhitespace = skipWhitespace(sqlFragment, endExclusive);
                 boolean isFunctionCall = nextNonWhitespace < length && sqlFragment.charAt(nextNonWhitespace) == '(';
                 boolean isTableQualifier = nextNonWhitespace < length && sqlFragment.charAt(nextNonWhitespace) == '.';

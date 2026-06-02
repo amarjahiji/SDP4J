@@ -1,6 +1,7 @@
-package com.sdp4j.demo;
+package com.sdp4j.demo.runners;
 
 import com.sdp4j.core.client.Sdp4jClient;
+import com.sdp4j.demo.ExampleDatabase;
 import com.sdp4j.sps4j.SPS4J;
 
 import java.sql.Connection;
@@ -14,10 +15,10 @@ public class Sps4jDemo {
     private final Sdp4jClient client;
 
     public Sps4jDemo() {
-        this.client = new Sdp4jClient("", "", "", "com.sdp4j.demo");
+        this.client = ExampleDatabase.client();
     }
 
-    static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException {
         Sps4jDemo demo = new Sps4jDemo();
 
         demo.case1_fetchByNamedParam();

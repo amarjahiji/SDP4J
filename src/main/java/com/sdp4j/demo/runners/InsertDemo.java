@@ -1,6 +1,8 @@
-package com.sdp4j.demo;
+package com.sdp4j.demo.runners;
 
-import com.sdp4j.core.client.Sdp4jClient;
+import com.sdp4j.demo.ExampleDatabase;
+import com.sdp4j.demo.models.Role;
+import com.sdp4j.demo.models.User;
 import com.sdp4j.sq4j.SQ4J;
 import com.sdp4j.sq4j.queryinternals.InsertQuery;
 import com.sdp4j.sq4j.renderers.RenderContext;
@@ -12,10 +14,10 @@ public class InsertDemo {
     private final SQ4J sq4j;
 
     public InsertDemo() {
-        this.sq4j = new Sdp4jClient("", "", "", "com.sdp4j.demo").getSq4j();
+        this.sq4j = ExampleDatabase.client().getSq4j();
     }
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         InsertDemo demo = new InsertDemo();
 
         demo.case1_insertFullEntity();

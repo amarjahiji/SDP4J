@@ -49,8 +49,10 @@ public class InsertBuilder<T> implements InsertValuesStep<T>, InsertExecuteStep 
         if (entities == null || entities.isEmpty()) {
             throw new Sdp4jValidationException("values(List) requires a non-empty list of entities");
         }
-        if (entities.contains(null)) {
-            throw new Sdp4jValidationException("values(List) cannot contain null entries");
+        for (T entity : entities) {
+            if (entity == null) {
+                throw new Sdp4jValidationException("values(List) cannot contain null entries");
+            }
         }
         this.batchMode = true;
         this.bindingsPerRow = new ArrayList<>(entities.size());
