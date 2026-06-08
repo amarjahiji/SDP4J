@@ -22,50 +22,50 @@ public class QueryDemo {
     public static void main(String[] args) {
         QueryDemo demo = new QueryDemo();
 
-        demo.case1_selectAllUserColumns();
-        demo.case2_selectSubsetOfColumns();
-        demo.case3_singleColumn();
-        demo.case4_simpleEqualityWithBinding();
-        demo.case5_andClauseWithMultipleBindings();
-        demo.case6_orClause();
-        demo.case7_mixedAndOrWithGroups();
-        demo.case8_likePattern();
-        demo.case9_inWithCollectionExpansion();
-        demo.case10_isNullAndIsNotNull();
-        demo.case11_notExpression();
-        demo.case12_qualifiedColumnInWhere();
-        demo.case13_orderByAsc();
-        demo.case14_orderByDesc();
-        demo.case15_orderByMultiple();
-        demo.case16_limit();
-        demo.case17_limitWithOffset();
-        demo.case18_mapToOne();
-        demo.case19_mapToOneEmpty();
-        demo.case20_toQueryInspection();
-        demo.case21_renderForSqlPreview();
-        demo.case22_unknownColumnInSelectIsRejected();
-        demo.case23_unknownColumnInWhereIsRejected();
-        demo.case24_unknownTableQualifierIsRejected();
-        demo.case25_mismatchedBindingsRejected();
-        demo.case26_inWithMixedScalarAndCollection();
-        demo.case27_selectStar();
-        demo.case28_selectStarWithWhere();
-        demo.case29_distinct();
-        demo.case30_distinctWithWhereAndOrder();
-        demo.case31_innerJoinWithAliases();
-        demo.case32_leftJoin();
-        demo.case33_rightJoin();
-        demo.case34_fullOuterJoin();
-        demo.case35_joinWithoutAliasUsesTableNameAsQualifier();
-        demo.case36_ambiguousBareColumnInWhereIsRejected();
-        demo.case37_qualifyingResolvesAmbiguity();
-        demo.case38_joinPlusDistinctPlusWhereAndOrder();
-        demo.case39_multipleJoins();
-        demo.case40_unknownQualifierInOnIsRejected();
-        demo.case41_mapToDtoSingleTable();
+//        demo.case1_selectAllUserColumns();
+//        demo.case2_selectSubsetOfColumns();
+//        demo.case3_singleColumn();
+//        demo.case4_simpleEqualityWithBinding();
+//        demo.case5_andClauseWithMultipleBindings();
+//        demo.case6_orClause();
+//        demo.case7_mixedAndOrWithGroups();
+//        demo.case8_likePattern();
+//        demo.case9_inWithCollectionExpansion();
+//        demo.case10_isNullAndIsNotNull();
+//        demo.case11_notExpression();
+//        demo.case12_qualifiedColumnInWhere();
+//        demo.case13_orderByAsc();
+//        demo.case14_orderByDesc();
+//        demo.case15_orderByMultiple();
+//        demo.case16_limit();
+//        demo.case17_limitWithOffset();
+//        demo.case18_mapToOne();
+//        demo.case19_mapToOneEmpty();
+//        demo.case20_toQueryInspection();
+//        demo.case21_renderForSqlPreview();
+//        demo.case22_unknownColumnInSelectIsRejected();
+//        demo.case23_unknownColumnInWhereIsRejected();
+//        demo.case24_unknownTableQualifierIsRejected();
+//        demo.case25_mismatchedBindingsRejected();
+//        demo.case26_inWithMixedScalarAndCollection();
+//        demo.case27_selectStar();
+//        demo.case28_selectStarWithWhere();
+//        demo.case29_distinct();
+//        demo.case30_distinctWithWhereAndOrder();
+//        demo.case31_innerJoinWithAliases();
+//        demo.case32_leftJoin();
+//        demo.case33_rightJoin();
+//        demo.case34_fullOuterJoin();
+//        demo.case35_joinWithoutAliasUsesTableNameAsQualifier();
+//        demo.case36_ambiguousBareColumnInWhereIsRejected();
+//        demo.case37_qualifyingResolvesAmbiguity();
+//        demo.case38_joinPlusDistinctPlusWhereAndOrder();
+//        demo.case39_multipleJoins();
+//        demo.case40_unknownQualifierInOnIsRejected();
+//        demo.case41_mapToDtoSingleTable();
         demo.case42_mapToDtoAcrossJoin();
-        demo.case43_dtoFieldsWithNoMatchingColumnStayNull();
-        demo.case44_resultColumnsWithNoMatchingDtoFieldIgnored();
+//        demo.case43_dtoFieldsWithNoMatchingColumnStayNull();
+//        demo.case44_resultColumnsWithNoMatchingDtoFieldIgnored();
     }
 
     private void case1_selectAllUserColumns() {
@@ -453,7 +453,7 @@ public class QueryDemo {
     }
 
     private void case42_mapToDtoAcrossJoin() {
-        List<UserWithRoleDto> rows = sq4j.select("u.id", "u.first_name", "u.last_name", "u.is_active", "r.name")
+        List<UserWithRoleDto> rows = sq4j.select("u.id", "u.first_name", "u.surname", "u.is_active", "r.name")
                 .from(User.class, "u")
                 .innerJoin(Role.class, "r").on("u.id = r.user_id")
                 .mapTo(UserWithRoleDto.class);

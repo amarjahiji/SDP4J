@@ -53,6 +53,9 @@ public class SelectRenderer {
                 ctx.append(field.tableQualifier()).append(".");
             }
             ctx.append(field.column());
+            if (field.hasAlias()) {
+                ctx.append(" AS ").append(field.alias());
+            }
         }
     }
 

@@ -49,7 +49,7 @@ class Sq4jIntegrationTest extends PostgresIntegrationTest {
 
         assertTrue(loaded.isPresent());
         assertEquals("Alice", loaded.get().getFirstName());
-        assertEquals("Smith", loaded.get().getLastName());
+        assertEquals("Smith", loaded.get().getSurname());
         assertTrue(loaded.get().getActive());
     }
 
@@ -150,7 +150,7 @@ class Sq4jIntegrationTest extends PostgresIntegrationTest {
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setFirstName(firstName);
-        user.setLastName(lastName);
+        user.setSurname(lastName);
         user.setActive(active);
         return user;
     }

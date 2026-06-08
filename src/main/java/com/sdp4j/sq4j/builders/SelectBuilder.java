@@ -251,18 +251,28 @@ public class SelectBuilder
             return;
         }
         for (String rawColumn : rawColumnProjection) {
-            int dotIndex = rawColumn.indexOf('.');
+            String expression = rawColumn.trim();
+            String alias = null;
+            // Split an optional trailing "AS <alias>" (case-insensitive). The alias
+            // becomes the result-set column label, which drives DTO field matching.
+            String[] parts = expression.split("(?i)\\s+as\\s+", 2);
+            if (parts.length == 2) {
+                expression = parts[0].trim();
+                alias = parts[1].trim();
+                validateAlias(alias);
+            }
+            int dotIndex = expression.indexOf('.');
             if (dotIndex >= 0) {
-                promoteQualifiedProjection(rawColumn, dotIndex);
+                promoteQualifiedProjection(expression, dotIndex, alias);
             } else {
-                promoteBareProjection(rawColumn);
+                promoteBareProjection(expression, alias);
             }
         }
     }
 
-    private void promoteQualifiedProjection(String rawColumn, int dotIndex) {
-        String qualifier = rawColumn.substring(0, dotIndex);
-        String column = rawColumn.substring(dotIndex + 1);
+    private void promoteQualifiedProjection(String expression, int dotIndex, String alias) {
+        String qualifier = expression.substring(0, dotIndex);
+        String column = expression.substring(dotIndex + 1);
         if (!fromScope.hasQualifier(qualifier)) {
             throw new Sdp4jValidationException(
                     "Unknown table qualifier '" + qualifier + "' in select. Known qualifiers: "
@@ -273,10 +283,10 @@ public class SelectBuilder
             throw new Sdp4jValidationException(
                     "Unknown column '" + column + "' on table '" + descriptor.tableName() + "'");
         }
-        projectedFields.add(new FieldRef(qualifier, column));
+        projectedFields.add(new FieldRef(qualifier, column, alias));
     }
 
-    private void promoteBareProjection(String column) {
+    private void promoteBareProjection(String column, String alias) {
         List<String> matchingQualifiers = fromScope.qualifiersWhereColumnExists(column);
         if (matchingQualifiers.isEmpty()) {
             throw new Sdp4jValidationException(
@@ -289,9 +299,16 @@ public class SelectBuilder
                             + ". Qualify it (e.g. " + matchingQualifiers.getFirst() + "." + column + ").");
         }
         if (fromScope.isMultiTable()) {
-            projectedFields.add(new FieldRef(matchingQualifiers.getFirst(), column));
+            projectedFields.add(new FieldRef(matchingQualifiers.getFirst(), column, alias));
         } else {
-            projectedFields.add(new FieldRef(column));
+            projectedFields.add(new FieldRef(null, column, alias));
+        }
+    }
+
+    private void validateAlias(String alias) {
+        if (!alias.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            throw new Sdp4jValidationException(
+                    "Invalid column alias '" + alias + "' — must be a plain identifier");
         }
     }
 

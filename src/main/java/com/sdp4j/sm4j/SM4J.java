@@ -283,12 +283,16 @@ public class SM4J {
         ddls.add(Sql.CREATE_MIGRATIONS_TABLE);
         ddls.add(Sql.CREATE_MIGRATION_STEPS_TABLE);
         ddls.add(Sql.CREATE_MIGRATION_STEPS_INDEX);
+        List<String> foreignKeyDdls = new ArrayList<>();
+        List<String> indexDdls = new ArrayList<>();
         for (Class<?> clazz : classesToMigrate) {
             TableMetadata tableMetadata = metadataParser.parse(clazz);
             ddls.add(createDdlGenerator.generateTableWithoutFkAndIdx(tableMetadata));
-            ddls.addAll(addDdlGenerator.generateAddForeignKeys(tableMetadata));
-            ddls.addAll(addDdlGenerator.generateIndicesDdls(tableMetadata));
+            foreignKeyDdls.addAll(addDdlGenerator.generateAddForeignKeys(tableMetadata));
+            indexDdls.addAll(addDdlGenerator.generateIndicesDdls(tableMetadata));
         }
+        ddls.addAll(foreignKeyDdls);
+        ddls.addAll(indexDdls);
         try {
             executeDdls(connection, ddls);
             UUID migrationId = insertMigration(connection);

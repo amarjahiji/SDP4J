@@ -27,9 +27,9 @@ public final class ExampleDatabase {
     }
 
     public static Sdp4jClient client() {
-        String url = envOrDefault("SDP4J_URL", "jdbc:postgresql://localhost:5432/sdp4j_examples");
-        String username = envOrDefault("SDP4J_USER", "postgres");
-        String password = envOrDefault("SDP4J_PASSWORD", "postgres");
+        String url = envOrDefault("SDP4J_URL", "jdbc:postgresql://localhost:5432/example");
+        String username = envOrDefault("SDP4J_USER", "amarjahiji");
+        String password = envOrDefault("SDP4J_PASSWORD", "flacko1237");
         return new Sdp4jClient(url, username, password, ENTITY_PACKAGE);
     }
 

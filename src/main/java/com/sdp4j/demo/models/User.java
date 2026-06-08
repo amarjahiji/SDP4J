@@ -1,9 +1,8 @@
 package com.sdp4j.demo.models;
 
-import com.sdp4j.sm4j.annotations.DefaultFalse;
-import com.sdp4j.sm4j.annotations.NotNull;
-import com.sdp4j.sm4j.annotations.PrimaryKey;
-import com.sdp4j.sm4j.annotations.Table;
+import com.sdp4j.sm4j.annotations.*;
+
+import java.math.BigDecimal;
 
 @Table(name = "users", mapToSnakeCase = true)
 public class User {
@@ -14,7 +13,7 @@ public class User {
     private String firstName;
 
     @NotNull
-    private String lastName;
+    private String surname;
 
     @DefaultFalse
     private Boolean isActive;
@@ -35,12 +34,12 @@ public class User {
         this.firstName = firstName;
     }
 
-    public String getLastName() {
-        return lastName;
+    public String getSurname() {
+        return surname;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setSurname(String surname) {
+        this.surname = surname;
     }
 
     public Boolean getActive() {

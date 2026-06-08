@@ -2,6 +2,7 @@ package com.sdp4j.sq4j.builders;
 
 import com.sdp4j.core.exception.Sdp4jValidationException;
 import com.sdp4j.core.exception.Sq4jException;
+import com.sdp4j.sm4j.metadata.ColumnMetadata;
 import com.sdp4j.sq4j.steps.InsertExecuteStep;
 import com.sdp4j.sq4j.steps.InsertValuesStep;
 import com.sdp4j.sq4j.executors.QueryExecutor;
@@ -106,9 +107,22 @@ public class InsertBuilder<T> implements InsertValuesStep<T>, InsertExecuteStep 
     private List<Object> readEveryFieldInOrder(T entity) {
         List<Object> values = new ArrayList<>(allColumnsInDeclarationOrder.size());
         for (Map.Entry<String, Field> entry : entityDescriptor.fieldByColumn().entrySet()) {
-            values.add(readField(entry.getValue(), entity));
+            String columnName = entry.getKey();
+            Object value = readField(entry.getValue(), entity);
+            if (value == null && isNonNullable(columnName)) {
+                throw new Sdp4jValidationException(
+                        "Cannot insert into '" + entityDescriptor.tableName() + "': column '"
+                                + columnName + "' is NOT NULL but the "
+                                + entityClass.getSimpleName() + " field is null");
+            }
+            values.add(value);
         }
         return values;
+    }
+
+    private boolean isNonNullable(String columnName) {
+        ColumnMetadata column = entityDescriptor.columnMetadata(columnName);
+        return column != null && !column.isNullable();
     }
 
     private Object readField(Field field, T entity) {

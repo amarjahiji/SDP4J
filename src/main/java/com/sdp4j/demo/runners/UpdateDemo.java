@@ -18,7 +18,6 @@ public class UpdateDemo {
 
     public static void main(String[] args) {
         UpdateDemo demo = new UpdateDemo();
-
         demo.case1_updateFullEntityWherePk();
         demo.case2_updatePartialEntitySkipsNulls();
         demo.case3_updateWithAlias();
@@ -34,13 +33,13 @@ public class UpdateDemo {
     private void case1_updateFullEntityWherePk() {
         User newValues = new User();
         newValues.setFirstName("Alice");
-        newValues.setLastName("Smith");
+        newValues.setSurname("Smith");
         newValues.setActive(true);
 
         int affected = sq4j.update(User.class)
                 .set(newValues)
                 .where("id = :id")
-                .set(":id", "some-existing-id")
+                .set(":id", "aa743699-a783-4363-bd75-bcb2ab2734a1")
                 .execute();
         System.out.println("case1 updated=" + affected);
     }
@@ -52,7 +51,7 @@ public class UpdateDemo {
         int affected = sq4j.update(User.class)
                 .set(patch)
                 .where("id = :id")
-                .set(":id", "some-existing-id")
+                .set(":id", "aa743699-a783-4363-bd75-bcb2ab2734a1")
                 .execute();
         System.out.println("case2 updated=" + affected);
     }
@@ -123,6 +122,7 @@ public class UpdateDemo {
     private void case9_inspectUpdateAst() {
         User patch = new User();
         patch.setFirstName("Dave");
+        patch.setSurname("Man");
         patch.setActive(true);
 
         UpdateQuery query = sq4j.update(User.class)
@@ -140,7 +140,7 @@ public class UpdateDemo {
     private void case10_previewRenderedSql() {
         User patch = new User();
         patch.setFirstName("Eve");
-        patch.setLastName("Williams");
+        patch.setSurname("Williams");
         patch.setActive(false);
 
         UpdateQuery query = sq4j.update(User.class, "u")

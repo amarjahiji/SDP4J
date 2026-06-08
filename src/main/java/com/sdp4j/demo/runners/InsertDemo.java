@@ -19,51 +19,32 @@ public class InsertDemo {
 
     public static void main(String[] args) {
         InsertDemo demo = new InsertDemo();
-
-        demo.case1_insertFullEntity();
-        demo.case2_partialEntityNullsBecomeSqlNull();
-        demo.case3_insertOnlyPk();
-        demo.case4_inspectInsertAst();
-        demo.case5_previewRenderedSql();
-        demo.case6_rejectNullEntity();
-        demo.case7_insertRoleAcrossFk();
-        demo.case8_batchInsert();
+//        demo.case4_inspectInsertAst();
+//        demo.case1_insertFullEntity();
+//        demo.case5_previewRenderedSql();
+//        demo.case6_rejectNullEntity();
+//        demo.case4_inspectInsertAst();
+//        demo.case7_insertRoleAcrossFk();
         demo.case9_batchInsertEmptyListRejected();
-        demo.case10_batchInsertNullElementRejected();
+//          demo.case8_batchInsert();
+
     }
 
     private void case1_insertFullEntity() {
         User user = new User();
         user.setId(UUID.randomUUID().toString());
-        user.setFirstName("Alice");
-        user.setLastName("Smith");
+        user.setFirstName("BobbyB");
+        user.setSurname("Smith");
         user.setActive(true);
-
         int affected = sq4j.insertInto(User.class).value(user).execute();
         System.out.println("case1 inserted=" + affected);
-    }
-
-    private void case2_partialEntityNullsBecomeSqlNull() {
-        User user = new User();
-        user.setId(UUID.randomUUID().toString());
-        user.setFirstName("Bob");
-
-        int affected = sq4j.insertInto(User.class).value(user).execute();
-        System.out.println("case2 inserted=" + affected);
-    }
-
-    private void case3_insertOnlyPk() {
-        User user = new User();
-        user.setId(UUID.randomUUID().toString());
-
-        int affected = sq4j.insertInto(User.class).value(user).execute();
-        System.out.println("case3 inserted=" + affected);
     }
 
     private void case4_inspectInsertAst() {
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setFirstName("Carol");
+        user.setSurname("Bleu");
 
         InsertQuery query = sq4j.insertInto(User.class).value(user).toQuery();
         System.out.println("case4 table=" + query.target().name()
@@ -75,7 +56,7 @@ public class InsertDemo {
         User user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setFirstName("Dave");
-        user.setLastName("Johnson");
+        user.setSurname("Johnson");
         user.setActive(false);
 
         InsertQuery query = sq4j.insertInto(User.class).value(user).toQuery();
@@ -97,7 +78,7 @@ public class InsertDemo {
         Role role = new Role();
         role.setId(UUID.randomUUID().toString());
         role.setName("admin");
-        role.setUserId(UUID.randomUUID().toString());
+        role.setUserId("3f890619-c921-44ec-a5ba-e90a29499075");
 
         int affected = sq4j.insertInto(Role.class).value(role).execute();
         System.out.println("case7 inserted=" + affected);
@@ -106,13 +87,14 @@ public class InsertDemo {
     private void case8_batchInsert() {
         User u1 = new User();
         u1.setId(UUID.randomUUID().toString());
-        u1.setFirstName("Alice");
-        u1.setLastName("Smith");
+        u1.setFirstName("Will");
+        u1.setSurname("Smith");
         u1.setActive(true);
 
         User u2 = new User();
         u2.setId(UUID.randomUUID().toString());
         u2.setFirstName("Bob");
+        u2.setSurname("BBB");
 
         int affected = sq4j.insertInto(User.class)
                 .values(java.util.List.of(u1, u2))

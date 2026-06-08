@@ -21,13 +21,13 @@ public class Sps4jDemo {
     public static void main(String[] args) throws SQLException {
         Sps4jDemo demo = new Sps4jDemo();
 
-        demo.case1_fetchByNamedParam();
+//        demo.case1_fetchByNamedParam();
         demo.case2_reuseSameParamTwice();
-        demo.case3_updateReturningCount();
-        demo.case4_batchInsert();
-        demo.case5_bindExplicitNull();
-        demo.case6_postgresCastIsNotAParam();
-        demo.case7_rawStatementEscapeHatch();
+//        demo.case3_updateReturningCount();
+//        demo.case4_batchInsert();
+//        demo.case5_bindExplicitNull();
+//        demo.case6_postgresCastIsNotAParam();
+//        demo.case7_rawStatementEscapeHatch();
     }
 
     private void case1_fetchByNamedParam() throws SQLException {
@@ -39,7 +39,7 @@ public class Sps4jDemo {
             ps = client.getSps4j()
                     .connection(con)
                     .sql("SELECT * FROM users WHERE id = :id")
-                    .set(":id", UUID.randomUUID().toString());
+                    .set(":id", "aa743699-a783-4363-bd75-bcb2ab2734a1");
             rs = ps.executeQuery();
             while (rs.next()) {
                 System.out.println("case1 first_name=" + rs.getString("first_name"));
@@ -57,7 +57,7 @@ public class Sps4jDemo {
             con = client.getDataSource().getConnection();
             ps = client.getSps4j()
                     .connection(con)
-                    .sql("SELECT * FROM users WHERE first_name = :name OR last_name = :name")
+                    .sql("SELECT * FROM users WHERE first_name = :name OR surname = :name")
                     .set(":name", "Alice");
             rs = ps.executeQuery();
             while (rs.next()) {
